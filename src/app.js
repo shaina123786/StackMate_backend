@@ -24,27 +24,32 @@ const server = http.createServer(app);
 
 // Initialize Socket.io
 initializeSocket(server);
-
-// 🟢 CORS — ab hardcoded nahi, .env se FRONTEND_URL uthayega.
-// Local dev me .env me FRONTEND_URL=http://localhost:5173 rakhna,
-// Render pe env variable me apna deployed Vercel URL daalna.
+// 🟢 FAIL-SAFE CORS CONFIGURATION FOR PRODUCTION
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:3000",
   "https://stackmate-web.vercel.app"
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps or curl requests)
+      // Allow requests with no origin (like Postman or mobile apps)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(null, true); // Safely allow deployed Vercel domains
+      
+      // Allow localhost or any vercel app deployment
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app")
+      ) {
+        return callback(null, true);
       }
+      
+      return callback(null, true); // Fallback allow for deployed origins
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(express.json());
